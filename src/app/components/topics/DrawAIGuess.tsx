@@ -203,7 +203,7 @@ export function DrawAIGuess() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return;
 
     context.fillStyle = "#000000";
@@ -228,7 +228,7 @@ export function DrawAIGuess() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return;
 
     const point = getPoint(event);
@@ -243,7 +243,7 @@ export function DrawAIGuess() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return;
 
     const point = getPoint(event);
@@ -275,7 +275,7 @@ export function DrawAIGuess() {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    const fullContext = canvas.getContext("2d");
+    const fullContext = canvas.getContext("2d", { willReadFrequently: true });
     if (!fullContext) return null;
 
     const fullImageData = fullContext.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data;
@@ -314,7 +314,7 @@ export function DrawAIGuess() {
     const squareCanvas = document.createElement("canvas");
     squareCanvas.width = squareSize;
     squareCanvas.height = squareSize;
-    const squareContext = squareCanvas.getContext("2d");
+    const squareContext = squareCanvas.getContext("2d", { willReadFrequently: true });
     if (!squareContext) return null;
 
     squareContext.fillStyle = "#000000";
@@ -335,7 +335,7 @@ export function DrawAIGuess() {
     const smallCanvas = document.createElement("canvas");
     smallCanvas.width = GRID_SIZE;
     smallCanvas.height = GRID_SIZE;
-    const smallContext = smallCanvas.getContext("2d");
+    const smallContext = smallCanvas.getContext("2d", { willReadFrequently: true });
     if (!smallContext) return null;
 
     smallContext.fillStyle = "#000000";

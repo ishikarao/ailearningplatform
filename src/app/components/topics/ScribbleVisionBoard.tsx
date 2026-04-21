@@ -1,9 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 import { Eraser, Sparkles, PencilLine } from "lucide-react";
+import JSZip from "jszip";
 
 type VisionGuess = {
   rawResponse: string;
   fullPayload: any;
+};
+
+type UploadLinksResponse = {
+  job_id: string;
+  upload_urls: Record<string, { file_url: string; file_metadata?: Record<string, unknown> }>;
+};
+
+type JobStatusResponse = {
+  job_id: string;
+  job_state: string;
+  error_message?: string;
+  job_details?: Array<{
+    total_pages?: number;
+    pages_processed?: number;
+    pages_succeeded?: number;
+    pages_failed?: number;
+    page_errors?: Array<{ page?: number; error_message?: string }>;
+  }>;
+};
+
+type DownloadLinksResponse = {
+  download_urls: Record<string, { file_url: string }>;
 };
 
 const CANVAS_WIDTH = 900;
@@ -18,11 +41,57 @@ export function ScribbleVisionBoard() {
   const [errorText, setErrorText] = useState("");
   const [guess, setGuess] = useState<VisionGuess | null>(null);
 
+  const createZipWithPng = async (pngBlob: Blob) => {
+    const zip = new JSZip();
+    zip.file("scribble.png", pngBlob);
+    return await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+  };
+
+  const uploadWithDevProxy = async (targetUrl: string, headers: Record<string, string>, body: Blob) => {
+    const encodedHeaders = encodeURIComponent(JSON.stringify(headers));
+    return await fetch("/__sarvam_proxy/upload", {
+      method: "POST",
+      headers: {
+        "x-target-url": targetUrl,
+        "x-target-headers": encodedHeaders,
+        "Content-Type": "application/octet-stream",
+      },
+      body,
+    });
+  };
+
+  const downloadWithDevProxy = async (targetUrl: string) => {
+    return await fetch(`/__sarvam_proxy/download?url=${encodeURIComponent(targetUrl)}`);
+  };
+
+  const extractTextFromOutputZip = async (zipBlob: Blob) => {
+    const zip = await JSZip.loadAsync(zipBlob);
+    const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+
+    const preferred = entries.find((entry) => entry.name.toLowerCase().endsWith(".md"));
+    if (preferred) return await preferred.async("text");
+
+    const txt = entries.find((entry) => entry.name.toLowerCase().endsWith(".txt"));
+    if (txt) return await txt.async("text");
+
+    const json = entries.find((entry) => entry.name.toLowerCase().endsWith(".json"));
+    if (json) {
+      const content = await json.async("text");
+      return content;
+    }
+
+    if (entries.length > 0) {
+      return await entries[0].async("text");
+    }
+
+    return "";
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.fillStyle = "#ffffff";
@@ -36,7 +105,7 @@ export function ScribbleVisionBoard() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.lineWidth = brushSize;
@@ -57,7 +126,7 @@ export function ScribbleVisionBoard() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const point = getPoint(event);
@@ -75,7 +144,7 @@ export function ScribbleVisionBoard() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const point = getPoint(event);
@@ -95,7 +164,7 @@ export function ScribbleVisionBoard() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.fillStyle = "#ffffff";
@@ -109,7 +178,7 @@ export function ScribbleVisionBoard() {
     const canvas = canvasRef.current;
     if (!canvas) return false;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return false;
 
     const data = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT).data;
@@ -147,125 +216,157 @@ export function ScribbleVisionBoard() {
     setGuess(null);
 
     try {
-      // Convert canvas to blob
-      const blob = await new Promise<Blob>((resolve, reject) => {
+      const pngBlob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => {
           if (b) resolve(b);
           else reject(new Error("Failed to create blob"));
         }, "image/png");
       });
+      const zipBlob = await createZipWithPng(pngBlob);
 
-      // Step 1: Create a Document Intelligence job
-      const createJobResponse = await fetch("https://api.sarvam.ai/v1/document-intelligence/jobs", {
+      const createJobResponse = await fetch("https://api.sarvam.ai/doc-digitization/job/v1", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "api-subscription-key": apiKey,
         },
         body: JSON.stringify({
-          language: "en-IN",
-          output_format: "md"
+          job_parameters: {
+            language: "en-IN",
+            output_format: "md",
+          },
         }),
       });
 
       if (!createJobResponse.ok) {
-        throw new Error(`Failed to create job: ${createJobResponse.status}`);
+        const errorBody = await createJobResponse.text().catch(() => "");
+        throw new Error(`Failed to create job (${createJobResponse.status}): ${errorBody || "Unknown error"}`);
       }
 
-      const jobData = await createJobResponse.json();
-      const jobId = jobData.job_id;
+      const createdJob = await createJobResponse.json();
+      const jobId = createdJob?.job_id;
+      if (!jobId) throw new Error("No job_id received from Sarvam.");
 
-      // Step 2: Upload the image
-      const formData = new FormData();
-      formData.append("file", blob, "scribble.png");
+      const uploadLinksResponse = await fetch("https://api.sarvam.ai/doc-digitization/job/v1/upload-files", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-subscription-key": apiKey,
+        },
+        body: JSON.stringify({
+          job_id: jobId,
+          files: ["scribble.zip"],
+        }),
+      });
 
-      const uploadResponse = await fetch(
-        `https://api.sarvam.ai/v1/document-intelligence/jobs/${jobId}/upload`,
-        {
-          method: "POST",
-          headers: {
-            "api-subscription-key": apiKey,
-          },
-          body: formData,
-        }
-      );
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload file: ${uploadResponse.status}`);
+      if (!uploadLinksResponse.ok) {
+        const errorBody = await uploadLinksResponse.text().catch(() => "");
+        throw new Error(`Failed to get upload links (${uploadLinksResponse.status}): ${errorBody || "Unknown error"}`);
       }
 
-      // Step 3: Start the job
-      const startResponse = await fetch(
-        `https://api.sarvam.ai/v1/document-intelligence/jobs/${jobId}/start`,
-        {
-          method: "POST",
-          headers: {
-            "api-subscription-key": apiKey,
-          },
+      const uploadLinks = (await uploadLinksResponse.json()) as UploadLinksResponse;
+      const uploadInfo = Object.values(uploadLinks.upload_urls || {})[0];
+      if (!uploadInfo?.file_url) {
+        throw new Error("Upload URL not provided by Sarvam.");
+      }
+
+      const uploadHeaders: Record<string, string> = { "x-ms-blob-type": "BlockBlob" };
+      if (uploadInfo.file_metadata) {
+        for (const [key, value] of Object.entries(uploadInfo.file_metadata)) {
+          if (typeof value === "string") uploadHeaders[key] = value;
         }
-      );
+      }
+
+      const putResponse = import.meta.env.DEV
+        ? await uploadWithDevProxy(uploadInfo.file_url, uploadHeaders, zipBlob)
+        : await fetch(uploadInfo.file_url, {
+            method: "PUT",
+            headers: uploadHeaders,
+            body: zipBlob,
+          });
+
+      if (!putResponse.ok) {
+        throw new Error(`Failed to upload ZIP to storage (${putResponse.status}).`);
+      }
+
+      const startResponse = await fetch(`https://api.sarvam.ai/doc-digitization/job/v1/${jobId}/start`, {
+        method: "POST",
+        headers: {
+          "api-subscription-key": apiKey,
+        },
+      });
 
       if (!startResponse.ok) {
-        throw new Error(`Failed to start job: ${startResponse.status}`);
+        const errorBody = await startResponse.text().catch(() => "");
+        throw new Error(`Failed to start job (${startResponse.status}): ${errorBody || "Unknown error"}`);
       }
 
-      // Step 4: Poll for completion
-      let status;
-      let attempts = 0;
-      const maxAttempts = 30;
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-        
-        const statusResponse = await fetch(
-          `https://api.sarvam.ai/v1/document-intelligence/jobs/${jobId}`,
-          {
-            headers: {
-              "api-subscription-key": apiKey,
-            },
-          }
-        );
+      let status: JobStatusResponse | null = null;
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        if (!statusResponse.ok) {
-          throw new Error(`Failed to get status: ${statusResponse.status}`);
-        }
-
-        status = await statusResponse.json();
-        
-        if (status.job_state === "Completed" || status.job_state === "Failed") {
-          break;
-        }
-        
-        attempts++;
-      }
-
-      if (status?.job_state !== "Completed") {
-        throw new Error(`Job did not complete. Status: ${status?.job_state}`);
-      }
-
-      // Step 5: Download output
-      const outputResponse = await fetch(
-        `https://api.sarvam.ai/v1/document-intelligence/jobs/${jobId}/output`,
-        {
+        const statusResponse = await fetch(`https://api.sarvam.ai/doc-digitization/job/v1/${jobId}/status`, {
+          method: "GET",
           headers: {
             "api-subscription-key": apiKey,
           },
-        }
-      );
+        });
 
-      if (!outputResponse.ok) {
-        throw new Error(`Failed to download output: ${outputResponse.status}`);
+        if (!statusResponse.ok) {
+          const errorBody = await statusResponse.text().catch(() => "");
+          throw new Error(`Failed to fetch job status (${statusResponse.status}): ${errorBody || "Unknown error"}`);
+        }
+
+        status = (await statusResponse.json()) as JobStatusResponse;
+        if (["Completed", "PartiallyCompleted", "Failed"].includes(status.job_state)) break;
       }
 
-      const outputBlob = await outputResponse.blob();
-      const outputText = await outputBlob.text();
+      if (!status) {
+        throw new Error("Timed out waiting for Sarvam job status.");
+      }
+
+      if (status.job_state === "Failed") {
+        throw new Error(status.error_message || "Sarvam job failed.");
+      }
+
+      const downloadLinksResponse = await fetch(`https://api.sarvam.ai/doc-digitization/job/v1/${jobId}/download-files`, {
+        method: "POST",
+        headers: {
+          "api-subscription-key": apiKey,
+        },
+      });
+
+      if (!downloadLinksResponse.ok) {
+        const errorBody = await downloadLinksResponse.text().catch(() => "");
+        throw new Error(`Failed to get download links (${downloadLinksResponse.status}): ${errorBody || "Unknown error"}`);
+      }
+
+      const downloadLinks = (await downloadLinksResponse.json()) as DownloadLinksResponse;
+      const downloadInfo = Object.values(downloadLinks.download_urls || {})[0];
+      if (!downloadInfo?.file_url) {
+        throw new Error("Download URL not provided by Sarvam.");
+      }
+
+      const outputResponse = import.meta.env.DEV
+        ? await downloadWithDevProxy(downloadInfo.file_url)
+        : await fetch(downloadInfo.file_url);
+      if (!outputResponse.ok) {
+        throw new Error(`Failed to download output ZIP (${outputResponse.status}).`);
+      }
+
+      const outputZipBlob = await outputResponse.blob();
+      const extractedText = (await extractTextFromOutputZip(outputZipBlob)).trim();
+
+      if (!extractedText) {
+        throw new Error("No readable text detected. Please write more clearly and try again.");
+      }
 
       setGuess({
         rawResponse: JSON.stringify(status, null, 2),
         fullPayload: {
           status,
-          extractedText: outputText
-        }
+          extractedText,
+        },
       });
 
     } catch (error) {
@@ -358,7 +459,7 @@ export function ScribbleVisionBoard() {
           </div>
 
           <p className="text-xs text-gray-500 mt-4">
-            Uses VITE_SARVAM_API_KEY. This uses Sarvam's Document Intelligence API for OCR.
+            Uses VITE_SARVAM_API_KEY and uploads your canvas as ZIP to Sarvam Document Intelligence.
           </p>
           {errorText && <p className="text-sm text-red-600 mt-2">{errorText}</p>}
         </div>
@@ -390,12 +491,10 @@ export function ScribbleVisionBoard() {
                       <span className="text-gray-800">{guess.fullPayload.status.job_state}</span>
                     </div>
                   )}
-                  {guess.fullPayload?.status?.page_metrics && (
+                  {guess.fullPayload?.status?.job_details?.[0]?.pages_processed !== undefined && (
                     <div className="flex gap-2">
                       <span className="font-medium text-gray-600">Pages Processed:</span>
-                      <span className="text-gray-800">
-                        {guess.fullPayload.status.page_metrics.pages_processed || 0}
-                      </span>
+                      <span className="text-gray-800">{guess.fullPayload.status.job_details[0].pages_processed}</span>
                     </div>
                   )}
                 </div>
