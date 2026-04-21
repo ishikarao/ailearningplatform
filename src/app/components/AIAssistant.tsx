@@ -46,7 +46,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
 
       const apiKey = import.meta.env.VITE_SARVAM_API_KEY;
       if (!apiKey) {
-        throw new Error("Missing VITE_SARVAM_API_KEY");
+        throw new Error("Missing API key configuration");
       }
 
       const res = await fetch("https://api.sarvam.ai/v1/chat/completions", {
@@ -62,7 +62,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
       });
 
       if (!res.ok) {
-        throw new Error(`Sarvam request failed with status ${res.status}`);
+        throw new Error(`Request failed with status ${res.status}`);
       }
 
       const response = await res.json();
@@ -78,7 +78,7 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
         { role: "assistant", content: assistantContent },
       ]);
     } catch (error) {
-      console.error("Sarvam AI error:", error);
+      console.error("AI assistant error:", error);
       setMessages((prev) => [
         ...prev,
         {

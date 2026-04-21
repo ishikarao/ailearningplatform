@@ -47,9 +47,9 @@ export function ScribbleVisionBoard() {
     return await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
   };
 
-  const uploadWithDevProxy = async (targetUrl: string, headers: Record<string, string>, body: Blob) => {
+  const uploadWithVisionProxy = async (targetUrl: string, headers: Record<string, string>, body: Blob) => {
     const encodedHeaders = encodeURIComponent(JSON.stringify(headers));
-    return await fetch("/__sarvam_proxy/upload", {
+    return await fetch("/__vision_proxy/upload", {
       method: "POST",
       headers: {
         "x-target-url": targetUrl,
@@ -60,8 +60,8 @@ export function ScribbleVisionBoard() {
     });
   };
 
-  const downloadWithDevProxy = async (targetUrl: string) => {
-    return await fetch(`/__sarvam_proxy/download?url=${encodeURIComponent(targetUrl)}`);
+  const downloadWithVisionProxy = async (targetUrl: string) => {
+    return await fetch(`/__vision_proxy/download?url=${encodeURIComponent(targetUrl)}`);
   };
 
   const extractTextFromOutputZip = async (zipBlob: Blob) => {
@@ -193,15 +193,15 @@ export function ScribbleVisionBoard() {
     return false;
   };
 
-  const guessFromSarvamVision = async () => {
+  const guessFromVision = async () => {
     const apiKey = import.meta.env.VITE_SARVAM_API_KEY;
     if (!apiKey) {
-      setErrorText("Missing VITE_SARVAM_API_KEY in your .env file.");
+      setErrorText("Missing AI API key in your .env file.");
       return;
     }
 
     if (!hasEnoughInk()) {
-      setErrorText("Write or draw something clearly first, then ask Sarvam Vision to guess.");
+      setErrorText("Write or draw something clearly first, then ask AI Vision to guess.");
       return;
     }
 
@@ -245,7 +245,7 @@ export function ScribbleVisionBoard() {
 
       const createdJob = await createJobResponse.json();
       const jobId = createdJob?.job_id;
-      if (!jobId) throw new Error("No job_id received from Sarvam.");
+      if (!jobId) throw new Error("No job_id received from AI service.");
 
       const uploadLinksResponse = await fetch("https://api.sarvam.ai/doc-digitization/job/v1/upload-files", {
         method: "POST",
@@ -267,7 +267,7 @@ export function ScribbleVisionBoard() {
       const uploadLinks = (await uploadLinksResponse.json()) as UploadLinksResponse;
       const uploadInfo = Object.values(uploadLinks.upload_urls || {})[0];
       if (!uploadInfo?.file_url) {
-        throw new Error("Upload URL not provided by Sarvam.");
+        throw new Error("Upload URL not provided by AI service.");
       }
 
       const uploadHeaders: Record<string, string> = { "x-ms-blob-type": "BlockBlob" };
@@ -278,7 +278,7 @@ export function ScribbleVisionBoard() {
       }
 
       const putResponse = import.meta.env.DEV
-        ? await uploadWithDevProxy(uploadInfo.file_url, uploadHeaders, zipBlob)
+        ? await uploadWithVisionProxy(uploadInfo.file_url, uploadHeaders, zipBlob)
         : await fetch(uploadInfo.file_url, {
             method: "PUT",
             headers: uploadHeaders,
@@ -322,11 +322,11 @@ export function ScribbleVisionBoard() {
       }
 
       if (!status) {
-        throw new Error("Timed out waiting for Sarvam job status.");
+        throw new Error("Timed out waiting for AI job status.");
       }
 
       if (status.job_state === "Failed") {
-        throw new Error(status.error_message || "Sarvam job failed.");
+        throw new Error(status.error_message || "AI job failed.");
       }
 
       const downloadLinksResponse = await fetch(`https://api.sarvam.ai/doc-digitization/job/v1/${jobId}/download-files`, {
@@ -344,11 +344,11 @@ export function ScribbleVisionBoard() {
       const downloadLinks = (await downloadLinksResponse.json()) as DownloadLinksResponse;
       const downloadInfo = Object.values(downloadLinks.download_urls || {})[0];
       if (!downloadInfo?.file_url) {
-        throw new Error("Download URL not provided by Sarvam.");
+        throw new Error("Download URL not provided by AI service.");
       }
 
       const outputResponse = import.meta.env.DEV
-        ? await downloadWithDevProxy(downloadInfo.file_url)
+        ? await downloadWithVisionProxy(downloadInfo.file_url)
         : await fetch(downloadInfo.file_url);
       if (!outputResponse.ok) {
         throw new Error(`Failed to download output ZIP (${outputResponse.status}).`);
@@ -370,7 +370,7 @@ export function ScribbleVisionBoard() {
       });
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to get Sarvam Vision response.";
+      const message = error instanceof Error ? error.message : "Failed to get AI Vision response.";
       setErrorText(message);
     } finally {
       setIsGuessing(false);
@@ -379,9 +379,9 @@ export function ScribbleVisionBoard() {
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">Scribble Board + Sarvam Vision (Document Intelligence)</h1>
+      <h1 className="text-4xl font-bold text-gray-900 mb-4">Scribble Board + AI Vision (Document Intelligence)</h1>
       <p className="text-lg text-gray-600 mb-8">
-        Write anything or draw any sketch, then let Sarvam Vision extract text from it.
+        Write anything or draw any sketch, then let AI Vision extract text from it.
       </p>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-8">
@@ -442,12 +442,12 @@ export function ScribbleVisionBoard() {
 
           <div className="flex flex-wrap gap-3 mt-4">
             <button
-              onClick={guessFromSarvamVision}
+              onClick={guessFromVision}
               disabled={isGuessing}
               className="px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Sparkles className="w-5 h-5" />
-              {isGuessing ? "Sarvam Vision is analyzing..." : "Analyze with Sarvam Vision"}
+              {isGuessing ? "AI Vision is analyzing..." : "Analyze with AI Vision"}
             </button>
 
             <button
@@ -459,7 +459,7 @@ export function ScribbleVisionBoard() {
           </div>
 
           <p className="text-xs text-gray-500 mt-4">
-            Uses VITE_SARVAM_API_KEY and uploads your canvas as ZIP to Sarvam Document Intelligence.
+            Uses AI API key and uploads your canvas as ZIP to the document intelligence service.
           </p>
           {errorText && <p className="text-sm text-red-600 mt-2">{errorText}</p>}
         </div>
@@ -511,7 +511,7 @@ export function ScribbleVisionBoard() {
             </div>
           ) : (
             <div className="min-h-[260px] rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 flex items-center justify-center text-center">
-              <p className="text-gray-500">Draw or write anything, then click Analyze with Sarvam Vision.</p>
+              <p className="text-gray-500">Draw or write anything, then click Analyze with AI Vision.</p>
             </div>
           )}
         </div>

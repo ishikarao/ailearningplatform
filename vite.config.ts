@@ -21,7 +21,7 @@ function sarvamBlobProxy() {
     name: 'sarvam-blob-proxy',
     apply: 'serve' as const,
     configureServer(server: any) {
-      server.middlewares.use('/__sarvam_proxy/upload', async (req: any, res: any) => {
+      server.middlewares.use('/__vision_proxy/upload', async (req: any, res: any) => {
         if (req.method !== 'POST') {
           res.statusCode = 405
           res.end('Method Not Allowed')
@@ -68,7 +68,7 @@ function sarvamBlobProxy() {
         })
       })
 
-      server.middlewares.use('/__sarvam_proxy/download', async (req: any, res: any) => {
+      server.middlewares.use('/__vision_proxy/download', async (req: any, res: any) => {
         if (req.method !== 'GET') {
           res.statusCode = 405
           res.end('Method Not Allowed')

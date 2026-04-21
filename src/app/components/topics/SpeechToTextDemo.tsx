@@ -76,7 +76,7 @@ export function SpeechToTextDemo() {
 
     const apiKey = import.meta.env.VITE_SARVAM_API_KEY;
     if (!apiKey) {
-      setErrorText("Missing VITE_SARVAM_API_KEY in your .env file.");
+      setErrorText("Missing AI API key in your .env file.");
       return;
     }
 
@@ -102,7 +102,7 @@ export function SpeechToTextDemo() {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        const message = payload?.error?.message || `Sarvam request failed with status ${response.status}`;
+        const message = payload?.error?.message || `Request failed with status ${response.status}`;
         throw new Error(message);
       }
 
@@ -201,7 +201,7 @@ export function SpeechToTextDemo() {
     <div className="max-w-7xl mx-auto px-8 py-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Speech-to-Text Demo (RNN/LSTM)</h1>
       <p className="text-lg text-gray-600 mb-8">
-        Record speech, stop recording, then send the full clip to Sarvam Speech-to-Text in your selected language.
+        Record speech, stop recording, then send the full clip to AI Speech-to-Text in your selected language.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -260,7 +260,7 @@ export function SpeechToTextDemo() {
               <span className="font-semibold">Recording Language:</span> {recordingLanguage || "Not recording"}
             </p>
             <p className="text-xs text-gray-500">
-              Uses <span className="font-mono">VITE_SARVAM_API_KEY</span> and optional <span className="font-mono">VITE_SARVAM_STT_ENDPOINT</span>.
+              Uses AI API key and optional speech endpoint from environment variables.
             </p>
             {errorText && <p className="text-sm text-red-600">{errorText}</p>}
           </div>

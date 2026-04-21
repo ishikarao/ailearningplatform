@@ -381,10 +381,10 @@ export function DrawAIGuess() {
     };
   };
 
-  const askSarvamForGuess = async () => {
+  const askAiForGuess = async () => {
     const apiKey = import.meta.env.VITE_SARVAM_API_KEY;
     if (!apiKey) {
-      setErrorText("Missing VITE_SARVAM_API_KEY in your .env file.");
+      setErrorText("Missing AI API key in your .env file.");
       return;
     }
 
@@ -438,7 +438,7 @@ export function DrawAIGuess() {
       if (!response.ok) {
         const errorBody = await response.text().catch(() => "");
         const compactError = errorBody.replace(/\s+/g, " ").trim().slice(0, 260);
-        throw new Error(`Sarvam request failed with status ${response.status}${compactError ? `: ${compactError}` : ""}`);
+        throw new Error(`Request failed with status ${response.status}${compactError ? `: ${compactError}` : ""}`);
       }
 
       return response.json();
@@ -480,7 +480,7 @@ export function DrawAIGuess() {
       }
 
       if (!payload) {
-        throw new Error(lastError || "All configured Sarvam models failed.");
+        throw new Error(lastError || "All configured models failed.");
       }
 
       const rawContent = payload?.choices?.[0]?.message?.content;
@@ -533,7 +533,7 @@ export function DrawAIGuess() {
       setGuess({
         digit: safeDigit,
         confidence: safeConfidence,
-        reason: data.reason || (fallbackUsed ? "Fallback guess from digit-shape features." : "Compact-grid based Sarvam guess."),
+        reason: data.reason || (fallbackUsed ? "Fallback guess from digit-shape features." : "Compact-grid based AI guess."),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to get digit guess.";
@@ -547,7 +547,7 @@ export function DrawAIGuess() {
     <div className="max-w-7xl mx-auto px-8 py-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Draw & AI Guess (CNN Demo) 1-9</h1>
       <p className="text-lg text-gray-600 mb-8">
-        Draw a single handwritten digit from 1 to 9. The canvas is converted to a 28x28 grayscale grid and sent to Sarvam AI for classification.
+        Draw a single handwritten digit from 1 to 9. The canvas is converted to a 28x28 grayscale grid and sent to AI for classification.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -576,12 +576,12 @@ export function DrawAIGuess() {
 
           <div className="flex flex-wrap gap-3 mt-5">
             <button
-              onClick={askSarvamForGuess}
+              onClick={askAiForGuess}
               disabled={isGuessing}
               className="px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Sparkles className="w-5 h-5" />
-              {isGuessing ? "Guessing..." : "Guess with Sarvam AI"}
+              {isGuessing ? "Guessing..." : "Guess with AI"}
             </button>
 
             <button
@@ -593,8 +593,7 @@ export function DrawAIGuess() {
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 mt-4">Uses VITE_SARVAM_API_KEY and optional VITE_SARVAM_MODEL_CANDIDATES.</p>
-          {modelUsed && <p className="text-xs text-gray-500 mt-1">Model used: {modelUsed}</p>}
+          <p className="text-xs text-gray-500 mt-4">Uses AI API key and optional model candidates from environment variables.</p>
           {errorText && <p className="text-sm text-red-600 mt-2">{errorText}</p>}
         </div>
 
@@ -630,7 +629,7 @@ export function DrawAIGuess() {
           ) : (
             <div className="min-h-[260px] rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 flex items-center justify-center text-center">
               <p className="text-gray-500">
-                Draw a digit from 1 to 9 and click Guess with Sarvam AI.
+                Draw a digit from 1 to 9 and click Guess with AI.
               </p>
             </div>
           )}
