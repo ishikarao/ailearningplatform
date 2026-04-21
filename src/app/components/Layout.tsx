@@ -11,12 +11,20 @@ export function Layout() {
     { path: "/neural-network", label: "Neural Network" },
     { path: "/forward-propagation", label: "Forward Propagation" },
     { path: "/backward-propagation", label: "Backward Propagation" },
-    { path: "/cnn", label: "CNN" },
-    { path: "/rnn", label: "RNN" },
+    {
+      path: "/cnn",
+      label: "CNN",
+      children: [
+        { path: "/image-text-extractor", label: "Image Text Extractor" },
+        { path: "/scribble-vision-board", label: "Scribble Vision Board" },
+      ],
+    },
+    {
+      path: "/rnn",
+      label: "RNN",
+      children: [{ path: "/speech-to-text-demo", label: "Speech-to-Text Demo" }],
+    },
     { path: "/lstm", label: "LSTM" },
-    { path: "/speech-to-text-demo", label: "Speech-to-Text Demo" },
-    { path: "/draw-ai-guess", label: "Draw & AI Guess" },
-    { path: "/scribble-vision-board", label: "Scribble Vision Board" },
     { path: "/hopfield-network", label: "Hopfield Network" },
   ];
 
@@ -34,20 +42,45 @@ export function Layout() {
         <nav className="flex-1 p-4 overflow-y-auto">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Topics</h2>
           <ul className="space-y-1">
-            {topics.map((topic) => (
+            {topics.map((topic) => {
+              const isParentActive =
+                location.pathname === topic.path ||
+                (topic.children ? topic.children.some((child) => child.path === location.pathname) : false);
+
+              return (
               <li key={topic.path}>
                 <Link
                   to={topic.path}
                   className={`block px-4 py-2 rounded-lg transition-colors ${
-                    location.pathname === topic.path
+                    isParentActive
                       ? "bg-blue-50 text-blue-700 font-medium"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   {topic.label}
                 </Link>
+
+                {topic.children && (
+                  <ul className="mt-1 ml-4 space-y-1">
+                    {topic.children.map((child) => (
+                      <li key={child.path}>
+                        <Link
+                          to={child.path}
+                          className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                            location.pathname === child.path
+                              ? "bg-blue-50 text-blue-700 font-medium"
+                              : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         </nav>
 

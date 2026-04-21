@@ -9,8 +9,8 @@ import { RNN } from "./components/topics/RNN";
 import { LSTM } from "./components/topics/LSTM";
 import { HopfieldNetwork } from "./components/topics/HopfieldNetwork";
 import { SpeechToTextDemo } from "./components/topics/SpeechToTextDemo";
-import { DrawAIGuess } from "./components/topics/DrawAIGuess";
 import { ScribbleVisionBoard } from "./components/topics/ScribbleVisionBoard";
+import { ImageTextExtractor } from "./components/topics/ImageTextExtractor";
 
 export const router = createBrowserRouter([
   {
@@ -25,7 +25,7 @@ export const router = createBrowserRouter([
       { path: "rnn", Component: RNN },
       { path: "lstm", Component: LSTM },
       { path: "speech-to-text-demo", Component: SpeechToTextDemo },
-      { path: "draw-ai-guess", Component: DrawAIGuess },
+      { path: "image-text-extractor", Component: ImageTextExtractor },
       { path: "scribble-vision-board", Component: ScribbleVisionBoard },
       { path: "hopfield-network", Component: HopfieldNetwork },
     ],

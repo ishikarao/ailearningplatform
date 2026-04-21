@@ -60,10 +60,10 @@ export function Home() {
       color: "bg-pink-100 text-pink-600",
     },
     {
-      path: "/draw-ai-guess",
+      path: "/image-text-extractor",
       icon: PencilLine,
-      title: "Draw & AI Guess (CNN Demo) 1-9",
-      description: "Draw a digit and let AI classify it from 1 to 9.",
+      title: "Image Text Extractor",
+      description: "Upload an image and extract readable text from it.",
       color: "bg-amber-100 text-amber-700",
     },
     {
