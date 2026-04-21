@@ -26,6 +26,14 @@ export function Layout() {
     },
     { path: "/lstm", label: "LSTM" },
     { path: "/hopfield-network", label: "Hopfield Network" },
+    {
+      path: "/generative-ai",
+      label: "Generative AI",
+      children: [
+        { path: "/generative-ai-use-cases", label: "Use Cases" },
+        { path: "/generative-ai-image-generator", label: "Image Generator" },
+      ],
+    },
   ];
 
   return (

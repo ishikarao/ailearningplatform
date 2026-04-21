@@ -73,6 +73,13 @@ export function Home() {
       description: "Write or draw anything and let AI Vision guess what it sees.",
       color: "bg-cyan-100 text-cyan-700",
     },
+    {
+      path: "/generative-ai",
+      icon: Sparkles,
+      title: "Generative AI",
+      description: "Study Gen AI concepts and generate images with Ollama using prompts.",
+      color: "bg-violet-100 text-violet-700",
+    },
   ];
 
   return (
