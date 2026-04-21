@@ -29,9 +29,21 @@ export function Layout() {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <aside className="relative w-64 border-r border-gray-200 flex flex-col overflow-hidden">
+        <video
+          className="absolute inset-0 h-full w-full object-cover object-left"
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src="/bg.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-black/40" />
+
+        <div className="relative z-10 flex h-full flex-col bg-black/45 backdrop-blur-[1px]">
         <div className="p-6 border-b border-gray-200">
           <Link to="/" className="flex items-center gap-2">
             <Brain className="w-8 h-8 text-blue-600" />
@@ -86,6 +98,7 @@ export function Layout() {
 
         <div className="p-4 border-t border-gray-200">
           <p className="text-xs text-gray-500">Interactive AI Learning Platform</p>
+        </div>
         </div>
       </aside>
 
