@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Brain, TrendingUp, TrendingDown, Grid3x3, Repeat, Clock, Network } from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, Grid3x3, Repeat, Clock, Network, Mic, PencilLine, Sparkles } from "lucide-react";
 
 export function Home() {
   const topics = [
@@ -51,6 +51,27 @@ export function Home() {
       title: "Hopfield Network",
       description: "Explore content-addressable memory systems and pattern recognition.",
       color: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      path: "/speech-to-text-demo",
+      icon: Mic,
+      title: "Speech-to-Text Demo (RNN/LSTM)",
+      description: "Record live audio, choose language, and transcribe speech with Sarvam AI.",
+      color: "bg-pink-100 text-pink-600",
+    },
+    {
+      path: "/draw-ai-guess",
+      icon: PencilLine,
+      title: "Draw & AI Guess (CNN Demo) 1-9",
+      description: "Draw a digit and let Sarvam AI classify it from 1 to 9.",
+      color: "bg-amber-100 text-amber-700",
+    },
+    {
+      path: "/scribble-vision-board",
+      icon: Sparkles,
+      title: "Scribble Board + Vision Guess",
+      description: "Write or draw anything and let Sarvam Vision guess what it sees.",
+      color: "bg-cyan-100 text-cyan-700",
     },
   ];
 

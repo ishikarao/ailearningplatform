@@ -8,6 +8,9 @@ import { CNN } from "./components/topics/CNN";
 import { RNN } from "./components/topics/RNN";
 import { LSTM } from "./components/topics/LSTM";
 import { HopfieldNetwork } from "./components/topics/HopfieldNetwork";
+import { SpeechToTextDemo } from "./components/topics/SpeechToTextDemo";
+import { DrawAIGuess } from "./components/topics/DrawAIGuess";
+import { ScribbleVisionBoard } from "./components/topics/ScribbleVisionBoard";
 
 export const router = createBrowserRouter([
   {
@@ -21,7 +24,12 @@ export const router = createBrowserRouter([
       { path: "cnn", Component: CNN },
       { path: "rnn", Component: RNN },
       { path: "lstm", Component: LSTM },
+      { path: "speech-to-text-demo", Component: SpeechToTextDemo },
+      { path: "draw-ai-guess", Component: DrawAIGuess },
+      { path: "scribble-vision-board", Component: ScribbleVisionBoard },
       { path: "hopfield-network", Component: HopfieldNetwork },
     ],
   },
 ]);
+
+

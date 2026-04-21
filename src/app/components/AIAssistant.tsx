@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Send, Bot } from "lucide-react";
-import { SarvamAIClient } from "sarvamai";
 
 interface Message {
   role: "user" | "assistant";
@@ -37,10 +36,6 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
     setLoading(true);
 
     try {
-      const client = new SarvamAIClient({
-        apiSubscriptionKey: import.meta.env.VITE_SARVAM_API_KEY,
-      });
-
       // Build conversation history — API requires first message to be from user
       const allMessages = [...messages, userMessage];
       const firstUserIndex = allMessages.findIndex((m) => m.role === "user");
@@ -49,10 +44,28 @@ export function AIAssistant({ onClose }: AIAssistantProps) {
         content: m.content,
       }));
 
-      const response = await client.chat.completions({
-        messages: history,
-        model: "sarvam-m",
+      const apiKey = import.meta.env.VITE_SARVAM_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing VITE_SARVAM_API_KEY");
+      }
+
+      const res = await fetch("https://api.sarvam.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-subscription-key": apiKey,
+        },
+        body: JSON.stringify({
+          model: "sarvam-m",
+          messages: history,
+        }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Sarvam request failed with status ${res.status}`);
+      }
+
+      const response = await res.json();
 
       // Strip <think>...</think> blocks, show only the actual response
       const raw =

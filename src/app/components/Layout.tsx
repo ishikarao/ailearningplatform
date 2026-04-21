@@ -14,6 +14,9 @@ export function Layout() {
     { path: "/cnn", label: "CNN" },
     { path: "/rnn", label: "RNN" },
     { path: "/lstm", label: "LSTM" },
+    { path: "/speech-to-text-demo", label: "Speech-to-Text Demo" },
+    { path: "/draw-ai-guess", label: "Draw & AI Guess" },
+    { path: "/scribble-vision-board", label: "Scribble Vision Board" },
     { path: "/hopfield-network", label: "Hopfield Network" },
   ];
 
