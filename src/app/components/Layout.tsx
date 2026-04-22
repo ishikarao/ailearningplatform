@@ -34,6 +34,7 @@ export function Layout() {
         { path: "/generative-ai-image-generator", label: "Image Generator" },
       ],
     },
+    { path: "/dsa-problem-assistant", label: "DSA Problem Assistant" },
   ];
 
   return (

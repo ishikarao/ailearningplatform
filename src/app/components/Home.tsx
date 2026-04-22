@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Brain, TrendingUp, TrendingDown, Grid3x3, Repeat, Clock, Network, Mic, PencilLine, Sparkles } from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, Grid3x3, Repeat, Clock, Network, Mic, PencilLine, Sparkles, Code2 } from "lucide-react";
 
 export function Home() {
   const topics = [
@@ -79,6 +79,13 @@ export function Home() {
       title: "Generative AI",
       description: "Study Gen AI concepts and generate images with Ollama using prompts.",
       color: "bg-violet-100 text-violet-700",
+    },
+    {
+      path: "/dsa-problem-assistant",
+      icon: Code2,
+      title: "DSA Problem Assistant",
+      description: "Add a DSA problem to get topic explanation and complete solution.",
+      color: "bg-emerald-100 text-emerald-700",
     },
   ];
 

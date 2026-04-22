@@ -7,8 +7,8 @@ type GenerateResponse = {
   images?: string[];
 };
 
-const DEFAULT_MODEL = "x/flux2-klein:4b";
-const IMAGE_GENERATION_ENDPOINT = "http://localhost:11434/api/generate";
+const DEFAULT_MODEL = import.meta.env.VITE_OLLAMA_IMAGE_MODEL || "x/flux2-klein:4b";
+const IMAGE_GENERATION_ENDPOINT = import.meta.env.VITE_OLLAMA_ENDPOINT || "http://localhost:11434/api/generate";
 
 const starterPrompts = [
   "A futuristic AI classroom with holographic neural network diagrams, cinematic lighting, ultra detailed",

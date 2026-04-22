@@ -14,6 +14,7 @@ import { ImageTextExtractor } from "./components/topics/ImageTextExtractor";
 import { GenerativeAIStudio } from "./components/topics/GenerativeAIStudio";
 import { GenerativeAIUseCases } from "./components/topics/GenerativeAIUseCases";
 import { GenerativeAIImageGenerator } from "./components/topics/GenerativeAIImageGenerator";
+import { DSAProblemAssistant } from "./components/topics/DSAProblemAssistant";
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { path: "generative-ai", Component: GenerativeAIStudio },
       { path: "generative-ai-use-cases", Component: GenerativeAIUseCases },
       { path: "generative-ai-image-generator", Component: GenerativeAIImageGenerator },
+      { path: "dsa-problem-assistant", Component: DSAProblemAssistant },
     ],
   },
 ]);
