@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BrainCircuit, Lightbulb, ListChecks } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 
 type StructuredSolution = {
   topicName: string;
@@ -21,16 +21,22 @@ const OLLAMA_ENDPOINT =
   import.meta.env.VITE_OLLAMA_ENDPOINT ||
   "http://localhost:11434/api/generate";
 
-// 🔥 USE SMALL MODEL
 const MODEL_NAME =
   import.meta.env.VITE_OLLAMA_DSA_MODEL || "llama3.2:3b";
+
+// ✅ Sample prompts
+const samplePrompts = [
+  "Find two numbers in an array that sum to target",
+  "Reverse a linked list",
+  "Find the longest substring without repeating characters",
+  "Detect cycle in a graph using DFS",
+];
 
 export function DSAProblemAssistant() {
   const [problem, setProblem] = useState("");
   const [loading, setLoading] = useState(false);
   const [rawText, setRawText] = useState("");
   const [parsed, setParsed] = useState<StructuredSolution | null>(null);
-  const [error, setError] = useState("");
 
   const cleanJSON = (text: string) => {
     const match =
@@ -45,7 +51,6 @@ export function DSAProblemAssistant() {
     setLoading(true);
     setRawText("");
     setParsed(null);
-    setError("");
 
     const prompt = `
 You are a DSA tutor. Return ONLY JSON in this format:
@@ -59,8 +64,6 @@ You are a DSA tutor. Return ONLY JSON in this format:
   "edgeCases": ["", ""],
   "solution": { "python": "" }
 }
-
-Keep explanation short and clear.
 
 Problem:
 ${problem}
@@ -98,20 +101,19 @@ ${problem}
           } catch {}
         }
 
-        setRawText(fullText); // 🔥 live update
+        setRawText(fullText);
       }
 
-      // 🔥 parse after complete
       const cleaned = cleanJSON(fullText);
 
       try {
         const parsedJSON = JSON.parse(cleaned);
         setParsed(parsedJSON);
       } catch {
-        setError("Failed to parse structured response.");
+        // ❌ NO ERROR SHOWN — silent fail
       }
-    } catch (err: any) {
-      setError(err.message || "Error occurred");
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -130,15 +132,27 @@ ${problem}
         placeholder="Enter DSA problem..."
       />
 
+      {/* SAMPLE BUTTONS */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {samplePrompts.map((p) => (
+          <button
+            key={p}
+            onClick={() => setProblem(p)}
+            className="text-xs px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200"
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+
       <button
         onClick={generate}
         disabled={loading}
-        className="bg-blue-600 text-white px-5 py-2 rounded-lg"
+        className="bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center gap-2"
       >
+        <BrainCircuit className="w-5 h-5" />
         {loading ? "Generating..." : "Generate"}
       </button>
-
-      {error && <p className="text-red-500 mt-3">{error}</p>}
 
       {/* OUTPUT */}
       <div className="mt-8 space-y-4">
@@ -150,22 +164,22 @@ ${problem}
 
             <Card title="Algorithm">
               <ol className="list-decimal ml-5">
-                {parsed.algorithm.map((s, i) => (
+                {parsed.algorithm?.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ol>
             </Card>
 
             <Card title="Complexity">
-              <p>Time: {parsed.complexity.time}</p>
-              <p>Space: {parsed.complexity.space}</p>
+              <p>Time: {parsed.complexity?.time}</p>
+              <p>Space: {parsed.complexity?.space}</p>
             </Card>
 
             <Card title="Dry Run">{parsed.dryRun}</Card>
 
             <Card title="Edge Cases">
               <ul className="list-disc ml-5">
-                {parsed.edgeCases.map((e, i) => (
+                {parsed.edgeCases?.map((e, i) => (
                   <li key={i}>{e}</li>
                 ))}
               </ul>
@@ -173,7 +187,7 @@ ${problem}
 
             <Card title="Python Code">
               <pre className="bg-black text-green-400 p-3 rounded overflow-auto">
-                {parsed.solution.python}
+                {parsed.solution?.python}
               </pre>
             </Card>
           </>
@@ -194,14 +208,8 @@ ${problem}
   );
 }
 
-// 🔥 Reusable UI Card
-function Card({
-  title,
-  children,
-}: {
-  title: string;
-  children?: any;
-}) {
+// UI Card
+function Card({ title, children }: any) {
   return (
     <div className="border rounded-lg p-4 bg-white shadow">
       <h2 className="font-semibold mb-2">{title}</h2>
